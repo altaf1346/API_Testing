@@ -1,4 +1,4 @@
-name: Jekyll site CI
+name: Advanced Jekyll Site CI
 
 on:
   push:
@@ -8,13 +8,51 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the site in the jekyll/builder container
+    # Step 1: Check out the repository
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    # Step 2: Set up Docker Buildx (for advanced Docker features)
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # Step 3: Cache Docker layers to speed up builds
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
+
+    # Step 4: Build the Jekyll site
+    - name: Build Jekyll site
       run: |
         docker run \
-        -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
-        jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
+        --rm \
+        -v ${{ github.workspace }}:/srv/jekyll \
+        -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
+        jekyll/builder:latest /bin/bash -c \
+        "chmod -R 777 /srv/jekyll && jekyll build --future"
+
+    # Step 5: Upload artifacts (optional, if you want to save the built site)
+    - name: Upload built site
+      uses: actions/upload-artifact@v3
+      with:
+        name: jekyll-site
+        path: ${{ github.workspace }}/_site
+
+    # Step 6: Send notifications (optional, for Slack, email, etc.)
+    - name: Notify via Slack
+      if: failure()
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        payload: |
+          {
+            "text": "🚨 Jekyll Site CI build failed for ${{ github.repository }}!"
+          }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
