@@ -54,5 +54,4 @@ jobs:
           {
             "text": "🚨 Jekyll Site CI build failed for ${{ github.repository }}!"
           }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    
