@@ -1,3 +1,5 @@
 pytest
 requests
 pytest-html
+oauthlib  # For OAuth testing
+pyjwt     # For JWT testing
